@@ -1,27 +1,25 @@
 import os
+from chat_api import ask
+from database import DataBase
 
 question = "Generate java unit test code for the following code, \"{}\""
+db = DataBase()
 
-project_name = "commons-io"
+for task in db.query_task():
+    code_path = task[2]
+    code = ""
+    source_file_name = code_path.split("/")[-1]
+    source_class_name = code_path.split("/")[-2]
 
+    with open(code_path, "r", encoding="utf8") as f:
+        for _ in f.readlines():
+            code += _
 
-def get_chat_gpt_result(source_code):
-    return ""
+    result = ask(question.format(code))
+    print(result)
 
-
-for code_dir in os.listdir(project_name):
-    for code_file in os.listdir(os.path.join(project_name, code_dir)):
-        if code_file.endswith("Test.java"):
-            continue
-        code = ""
-        with open(os.path.join(project_name, code_dir, code_file), "r", encoding="utf8") as f:
-            for _ in f.readlines():
-                code += _
-
-        print(question.format(code))
-        # TODO 得到ChatGPT的结果
-        result = get_chat_gpt_result(code)
-
-        with open(os.path.join(project_name, "chatgpt_" + code_file[:-5])) as f:
+    if result != "too many tokens":
+        with open(os.path.join(code_path.replace(source_file_name, ""),
+                               "chatgpt_" + source_class_name + "Test.java"), "w", encoding="utf8") as f:
             f.write(result)
         break
